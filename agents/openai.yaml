@@ -1,0 +1,10 @@
+interface:
+  display_name: GG → Research Online → Web Research
+  short_description: Run online research with Firecrawl CLI-first workflows
+  icon_small: ./assets/icon-small.svg
+  icon_large: ./assets/icon-large.png
+  brand_color: '#F59E0B'
+  default_prompt: >-
+    Use when current web research, site mapping, or structured page extraction is needed. Prefer
+    Firecrawl CLI, save artifacts under .researches/, and escalate to firecrawl for command
+    detail. Reference research-online/SKILL.md when cross-referencing this skill.
