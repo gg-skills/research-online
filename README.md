@@ -26,7 +26,7 @@ mkdir -p ~/.claude/skills
 git -C ~/.claude/skills clone git@github.com:gg-skills/research-online.git
 ```
 
-Restart your agent or reload skills after installation. See the parent [`skills` catalog repo](https://github.com/gg-skills/skills) for the full catalog.
+Restart your agent or reload skills after installation. Browse public skills on the [GG Skills organization profile](https://github.com/gg-skills).
 
 ## When to use
 
@@ -189,7 +189,7 @@ npx tsx .agents/skills/research-online/scripts/finalize-research-session.ts \
 ## Resources
 
 - Host search/fetch tools provided by the current harness (required default path).
-- [firecrawl](https://github.com/gg-skills/firecrawl) — optional low-level CLI primer; load only when that backend is already available and you need command syntax.
+- [Firecrawl CLI](https://github.com/firecrawl/cli) — optional low-level CLI primer; load only when that backend is already available and you need command syntax.
 - [Firecrawl documentation](https://docs.firecrawl.dev) — upstream reference for the optional backend.
 - Read the [skill workflow](SKILL.md#workflow) to run a research session from planning through synthesis.
 - Read [session commands](references/session-commands.md) when you need CLI examples or the script and flag inventory.

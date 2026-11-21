@@ -91,7 +91,7 @@ For a direct command lookup, see [Quick Commands](#quick-commands) below.
 `research-online/SKILL.md` is the workflow and archival layer. It does not depend on Firecrawl.
 
 - Use this skill when the task is to run an end-to-end research session: initialize a timestamped `.researches/<timestamp>/` directory, collect multi-source evidence with **any** available search/fetch, consolidate findings, and publish a reproducible artifact set.
-- If a sibling `firecrawl` skill (or another map/crawl/schema/browser primer) is installed **and** that backend is already available, load it on-demand for command-level syntax only.
+- If the backend is already available, consult its public CLI reference on demand for command syntax. For Firecrawl, use the [Firecrawl CLI reference](https://github.com/firecrawl/cli).
 - Absence of Firecrawl is not a blocker. Host search/fetch is a complete default path.
 
 ## Quick Commands
@@ -434,4 +434,4 @@ Read each reference when you need the guidance below.
 
 If this skill needs to create temporary files, place them under `.tmp/research-online/YYYY-MM-DD-{subject}`. The root `.tmp/` directory is already gitignored. Do not create top-level dotfile temp directories.
 
-[^rt]: `npx tsx` accepts any standard runner — `bunx tsx`, `pnpm dlx tsx`, `deno run -A npm:tsx`, `node --import tsx`, or `yarn dlx tsx`. The first five auto-fetch `tsx` on demand; only `node --import tsx` requires `tsx` to be installed locally first (`npm i -D tsx`, or `npm i -g tsx` if you cannot reach the npm registry). Bun users can also skip `tsx` entirely and run TypeScript directly via `bun <script>`. Pick whichever your project ships. The canonical runtime decision table lives in the `skills-manager` skill under `Runtime Selection` (only available when working in the full `gg-skills` monorepo).
+[^rt]: `npx tsx` accepts any standard runner — `bunx tsx`, `pnpm dlx tsx`, `deno run -A npm:tsx`, `node --import tsx`, or `yarn dlx tsx`. The first five auto-fetch `tsx` on demand; only `node --import tsx` requires `tsx` to be installed locally first (`npm i -D tsx`, or `npm i -g tsx` if you cannot reach the npm registry). Bun users can also skip `tsx` entirely and run TypeScript directly via `bun <script>`. Pick whichever your project ships.
