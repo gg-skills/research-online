@@ -256,3 +256,59 @@ All patterns above save artifacts into a shared session directory with this stru
 | `npx tsx scripts/save-web-research.ts --query "..." --source search \| fetch \| hybrid` | Save host search/fetch artifacts |
 | `npx tsx scripts/consolidate-research.ts --session-dir ... --query "..."` | Consolidate session (auto-discovers all dir types) |
 | `npx tsx scripts/consolidate-research.ts --auto-session --query "..."` | Consolidate latest session |
+
+## Search-Then-Selective-Fetch (Key Efficiency Pattern)
+
+This example assumes a harness that includes full page content in search results.
+
+`web_search` returns 5 results with full page content per result — potentially thousands of tokens of text. Processing all results in full wastes context and introduces noise from irrelevant pages.
+
+**Efficient workflow:**
+
+1. **Scan, don't read.** When `web_search` returns results, read only the titles, URLs, and snippet text in the response. Do not dump full content into context.
+2. **Select the 1–2 most relevant results.** Based on title relevance, domain authority, and snippet quality, pick the URLs most likely to answer the question.
+3. **Deep-read selectively.** Use `web_fetch` on only those 1–2 URLs. If the first result answers the question, stop — no need to fetch more.
+4. **Save the discovery results.** Use `save-web-research.ts` to persist the full search results for reproducibility, even if you only deep-read a subset.
+
+**Anti-pattern:**
+```text
+❌ web_search → read all 5 full results → try to synthesize from 5 noisy pages
+✅ web_search → scan titles + snippets → select 1-2 best → web_fetch → synthesize
+```
+
+**When to fetch more:** If the top 2 results don't answer the question, expand to results 3–5. If none do, refine the search query. Escalate to Phase 2 only if host fetch is insufficient **and** a specialized backend is already available. If results answer the broad question but reveal a more specific question, chain follow-up searches (see **Research Methodology → Research Chaining**). See **Research Methodology → Research Sufficiency** for stopping criteria by query type.
+
+## Common Misconceptions
+
+| # | Misconception | Correction | Key concept |
+|---|---------------|------------|-------------|
+| 1 | Firecrawl (or another named vendor) is required for this skill | Host search/fetch is the default. Specialized backends are optional extras when already available. Never block research waiting for setup. | Pragmatic tool selection |
+| 2 | One documentation format is enough | Keep both markdown and HTML for documentation targets | Dual-representation contract |
+| 3 | `firecrawl browser` shorthand is reliable | It is version-dependent and brittle; prefer explicit commands | Browser fallback fragility |
+| 4 | GitHub blob-page markdown is clean source text | It includes GitHub chrome; use `raw.githubusercontent.com` or local clone | Hybrid archival pattern |
+| 5 | Research sessions do not need to be published | Publish completed sessions by default unless the user says otherwise | Scoped artifact publish |
+| 6 | Host web tools are inferior to Firecrawl | Host search/fetch is the default path: zero extra setup, works on any harness that exposes search or fetch. Specialized backends add mapping/crawl/schema/browser only. | Tool complementarity |
+| 7 | All `web_search` results should be read in full | Scan titles and snippets first, then `web_fetch` only the 1-2 most relevant URLs. Reading all results in full wastes context and introduces noise. Use `save-web-research.ts` to persist all results for reproducibility. | Selective fetch |
+| 8 | Search query quality doesn't matter — the tool returns the best results anyway | Query formulation is the single highest-leverage research skill. A specific, disambiguated query returns far more relevant results than a vague one. Reformulate before fetching more. | Query formulation |
+| 9 | Any source that matches the topic is equally good | Source evaluation separates authoritative answers from noise. Prioritize official docs, GitHub repos, and version-qualified sources over forums and SEO blogs. | Source evaluation |
+| 10 | If search fails, try a different search tool | If host search returns poor results, another search backend with the same query will also return poor results. Reformulate the query first, then consider switching tools. | Query reformulation |
+| 11 | More searches always produce better results | After 2-3 failed reformulations, continuing to search wastes context and credits. Follow the Research Dead End Protocol: classify the failure, switch strategies, document the gap. | Dead end protocol |
+| 12 | More sources always produce better syntheses | 2 independent sources that agree is sufficient for most questions. 3+ sources confirming the same answer is confirmation, not improvement. Stop when you have convergent evidence, an official source, or a version-qualified answer. See Research Methodology → Research Sufficiency. | Research sufficiency |
+| 13 | Research should start with a search | Research should start with a plan. Without a one-sentence research question, knowledge of what you already know, and a stopping rule, searches are unfocused and results are noisy. See Research Planning. | Research planning |
+| 14 | One search is always enough | Complex questions often require chained follow-up searches where initial results reveal a more specific question ("How does X work?" → "How does X handle Y?"). Carry forward version numbers and key terms from initial results into follow-up queries. See Research Methodology → Research Chaining. | Research chaining |
+
+### Reference Loading by Task Type
+
+Load only the subset the task needs. Do not run a specialized-backend status check before ordinary research.
+
+| Task type | Load these files | Skip |
+|-----------|-----------------|------|
+| Choose a specialized-backend command (only if that backend is already available) | `tool-selection.md` | `consolidation-patterns.md` |
+| Parallelize research across sources | `harness-patterns.md` | `github-repository-doc-archival.md` |
+| Archive GitHub repository docs | `github-repository-doc-archival.md` | `harness-patterns.md` |
+| Consolidate subagent results | `consolidation-patterns.md` | `tool-selection.md` |
+| Evaluate source credibility | `source-evaluation.md` | `consolidation-patterns.md` |
+| Formulate effective queries | `query-formulation.md` + `source-evaluation.md` | `github-repository-doc-archival.md` |
+| Improve poor search results | `query-formulation.md` (reformulation techniques) | `source-evaluation.md` |
+| Quick research (host tools) | `query-formulation.md` + `source-evaluation.md` | `tool-selection.md`, `harness-patterns.md`, `github-repository-doc-archival.md` |
+| Save and consolidate artifacts | `consolidation-patterns.md` (session discovery) | `source-evaluation.md` |

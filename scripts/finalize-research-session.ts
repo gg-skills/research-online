@@ -10,7 +10,7 @@
  *   --session-dir ".researches/2026-02-11T134626Z"
  *
  * @testing Manual — npx tsx .agents/skills/research-online/scripts/finalize-research-session.ts
- * @see skills/research-online/SKILL.md - Firecrawl-first research workflow that owns session finalization.
+ * @see ../references/session-commands.md - Session publishing commands.
  * @documentation reviewed=2026-04-30 standard=FILE_OVERVIEW_STANDARDS_TYPESCRIPT@3
  */
 

@@ -115,3 +115,13 @@ If your top 3 search results all score below 2 strong signals, **stop and reform
 - For iterative reformulation patterns, see SKILL.md → Research Methodology → Iterative Refinement Pattern.
 - For tool selection guidance, see `references/tool-selection.md`.
 - For conflict resolution when sources disagree, see SKILL.md → Research Methodology → Conflict Resolution.
+
+## Strong and Weak Signals at a Glance
+
+| Signal | Strong source | Weak source |
+|--------|--------------|-------------|
+| **Domain** | Official docs, GitHub repos, `.dev` sites | Forums, SEO-heavy blogs, content mills |
+| **Recency** | Dated within last 12 months, or version-qualified | Undated, no version reference |
+| **Depth** | Code examples, API signatures, migration guides | High-level overviews, marketing copy |
+| **Authority** | First-party (author = maintainer or official team) | Third-party tutorials with no official reference |
+| **Canonical** | References to RFCs, specs, or official changelogs | Paraphrased summaries without source links |

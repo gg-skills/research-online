@@ -7,6 +7,22 @@ description: when configuring web research — multi-source discovery, site mapp
 
 > Verify release-sensitive answers against live sources before responding with high confidence.
 
+## When to Use This Skill
+
+**TRIGGER when:**
+
+- User asks for current web information, multi-source discovery, or site mapping.
+- Task requires structured extraction from web pages or autonomous research.
+- Research involves comparing documentation across multiple sites.
+- Need to verify a claim against live web sources.
+- Working with GitHub repository documentation that needs faithful archival.
+
+**SKIP when:**
+
+- The question can be answered from the local codebase or committed documentation.
+- The user explicitly asks for opinion or creative writing without factual grounding.
+- A sibling expert skill already covers a specific tool surface in isolation (for example Firecrawl CLI syntax). This skill still owns the research session.
+
 ## Quick Start
 
 **Tool names in this skill:** `web_search` and `web_fetch` mean whatever search and page-fetch tools the current harness exposes (built-in, MCP, CLI, or otherwise). Names vary (`web_search`/`web_fetch`, `WebSearch`/`WebFetch`, `open_page`, browser fetch). Use what is available now. Do not require Firecrawl or any other named vendor.
@@ -64,55 +80,9 @@ Use this skill to run online research and return source-backed answers with repr
 
 ### Hybrid Two-Phase Research Pattern
 
-For multi-source research where both breadth and depth matter, compose the tools in two phases:
+**Phase 1 — Discovery.** Search with host tools, shortlist 2–5 sources, and deep-read the best 1–2. Save the full search results. Expand to results 3–5 if needed, then refine the query if they still miss. Read [selective fetch](references/harness-patterns.md#search-then-selective-fetch-key-efficiency-pattern) when search results include full page content.
 
-**Phase 1 — Discovery (host search/fetch, default):**
-1. Use host `web_search` with the research query to discover relevant URLs.
-2. Review result titles and snippets to identify the 2–5 most promising sources.
-3. Use host `web_fetch` on the **most promising 1–2 URLs only** for immediate deep-reads. Do not fetch all results — selectivity reduces context noise and improves synthesis quality.
-4. If the answers are sufficient, deliver the synthesis — no specialized backend needed.
-
-**Phase 2 — Deep extraction (optional specialized backend):**
-5. Only if host fetch cannot produce clean extraction, structured JSON, site maps, or crawls **and** a backend such as Firecrawl CLI is already available:
-   ```bash
-   firecrawl scrape "<url>" --only-main-content --format markdown
-   ```
-6. For multi-page sites that need mapping (host fetch has no equivalent):
-   ```bash
-   firecrawl map "<site-root>" --search "<topic>"
-   ```
-7. Save all Phase 2 outputs to the `.researches/<timestamp>/` session folder.
-
-**When to skip Phase 2:**
-- Phase 1 provided sufficient answers.
-- No specialized backend is installed or authenticated.
-- The research doesn't need mapping, crawl, schema extraction, or dual-representation archival.
-
-**When Phase 2 is useful (only if a backend is already available):**
-- Research needs structured JSON extraction (`firecrawl agent --schema` or equivalent).
-- Research needs site-wide mapping or crawling.
-- Research needs dual-representation archival that host fetch cannot produce.
-
-This pattern uses always-available host tools for discovery, and spends specialized-backend budget only on the extraction tasks those backends uniquely cover.
-
-#### Search-Then-Selective-Fetch (Key Efficiency Pattern)
-
-`web_search` returns 5 results with full page content per result — potentially thousands of tokens of text. Processing all results in full wastes context and introduces noise from irrelevant pages.
-
-**Efficient workflow:**
-
-1. **Scan, don't read.** When `web_search` returns results, read only the titles, URLs, and snippet text in the response. Do not dump full content into context.
-2. **Select the 1–2 most relevant results.** Based on title relevance, domain authority, and snippet quality, pick the URLs most likely to answer the question.
-3. **Deep-read selectively.** Use `web_fetch` on only those 1–2 URLs. If the first result answers the question, stop — no need to fetch more.
-4. **Save the discovery results.** Use `save-web-research.ts` to persist the full search results for reproducibility, even if you only deep-read a subset.
-
-**Anti-pattern:**
-```text
-❌ web_search → read all 5 full results → try to synthesize from 5 noisy pages
-✅ web_search → scan titles + snippets → select 1-2 best → web_fetch → synthesize
-```
-
-**When to fetch more:** If the top 2 results don't answer the question, expand to results 3–5. If none do, refine the search query. Escalate to Phase 2 only if host fetch is insufficient **and** a specialized backend is already available. If results answer the broad question but reveal a more specific question, chain follow-up searches (see **Research Methodology → Research Chaining**). See **Research Methodology → Research Sufficiency** for stopping criteria by query type.
+**Phase 2 — Deep extraction.** Use an available specialized backend only if host tools cannot provide clean extraction, mapping, crawling, structured JSON, dual-representation archival, or interactive browser work. Save all outputs in the active session. Read [tool selection](references/tool-selection.md) when you need backend commands and examples.
 
 For a direct command lookup, see [Quick Commands](#quick-commands) below.
 
@@ -124,171 +94,11 @@ For a direct command lookup, see [Quick Commands](#quick-commands) below.
 - If a sibling `firecrawl` skill (or another map/crawl/schema/browser primer) is installed **and** that backend is already available, load it on-demand for command-level syntax only.
 - Absence of Firecrawl is not a blocker. Host search/fetch is a complete default path.
 
-## When to Use This Skill
-
-**TRIGGER when:**
-
-- User asks for current web information, multi-source discovery, or site mapping.
-- Task requires structured extraction from web pages or autonomous research.
-- Research involves comparing documentation across multiple sites.
-- Need to verify a claim against live web sources.
-- Working with GitHub repository documentation that needs faithful archival.
-
-**SKIP when:**
-
-- The question can be answered from the local codebase or committed documentation.
-- The user explicitly asks for opinion or creative writing without factual grounding.
-- A sibling expert skill already covers a specific tool surface in isolation (for example Firecrawl CLI syntax). This skill still owns the research session.
-
-## Common Misconceptions
-
-| # | Misconception | Correction | Key concept |
-|---|---------------|------------|-------------|
-| 1 | Firecrawl (or another named vendor) is required for this skill | Host search/fetch is the default. Specialized backends are optional extras when already available. Never block research waiting for setup. | Pragmatic tool selection |
-| 2 | One documentation format is enough | Keep both markdown and HTML for documentation targets | Dual-representation contract |
-| 3 | `firecrawl browser` shorthand is reliable | It is version-dependent and brittle; prefer explicit commands | Browser fallback fragility |
-| 4 | GitHub blob-page markdown is clean source text | It includes GitHub chrome; use `raw.githubusercontent.com` or local clone | Hybrid archival pattern |
-| 5 | Research sessions do not need to be published | Publish completed sessions by default unless the user says otherwise | Scoped artifact publish |
-| 6 | Host web tools are inferior to Firecrawl | Host search/fetch is the default path: zero extra setup, works on any harness that exposes search or fetch. Specialized backends add mapping/crawl/schema/browser only. | Tool complementarity |
-| 7 | All `web_search` results should be read in full | Scan titles and snippets first, then `web_fetch` only the 1-2 most relevant URLs. Reading all results in full wastes context and introduces noise. Use `save-web-research.ts` to persist all results for reproducibility. | Selective fetch |
-| 8 | Search query quality doesn't matter — the tool returns the best results anyway | Query formulation is the single highest-leverage research skill. A specific, disambiguated query returns far more relevant results than a vague one. Reformulate before fetching more. | Query formulation |
-| 9 | Any source that matches the topic is equally good | Source evaluation separates authoritative answers from noise. Prioritize official docs, GitHub repos, and version-qualified sources over forums and SEO blogs. | Source evaluation |
-| 10 | If search fails, try a different search tool | If host search returns poor results, another search backend with the same query will also return poor results. Reformulate the query first, then consider switching tools. | Query reformulation |
-| 11 | More searches always produce better results | After 2-3 failed reformulations, continuing to search wastes context and credits. Follow the Research Dead End Protocol: classify the failure, switch strategies, document the gap. | Dead end protocol |
-| 12 | More sources always produce better syntheses | 2 independent sources that agree is sufficient for most questions. 3+ sources confirming the same answer is confirmation, not improvement. Stop when you have convergent evidence, an official source, or a version-qualified answer. See Research Methodology → Research Sufficiency. | Research sufficiency |
-| 13 | Research should start with a search | Research should start with a plan. Without a one-sentence research question, knowledge of what you already know, and a stopping rule, searches are unfocused and results are noisy. See Research Planning. | Research planning |
-| 14 | One search is always enough | Complex questions often require chained follow-up searches where initial results reveal a more specific question ("How does X work?" → "How does X handle Y?"). Carry forward version numbers and key terms from initial results into follow-up queries. See Research Methodology → Research Chaining. | Research chaining |
-
 ## Quick Commands
 
-**Hybrid discovery pattern (recommended for most research):**
+Read [session commands](references/session-commands.md) when you need CLI examples or flags for initializing, saving, consolidating, or publishing.
 
-1. Discover with host `web_search`, then deep-read with host `web_fetch`:
-
-```
-web_search: "What changed in Next.js 15?"
-→ scan titles + snippets (don't read all results in full)
-→ select 1-2 most relevant URLs
-web_fetch: top URL for deep content
-→ optional, only if host fetch is insufficient AND a specialized backend is already available:
-   firecrawl scrape "<url>" --only-main-content --format markdown
-```
-
-Initialize a research session:
-
-```bash
-npm run research:session:init -- --query "What changed in Next.js 15?"
-```
-
-Optional Firecrawl search (only if that CLI is already available and host search is not enough):
-
-```bash
-export FIRECRAWL_OUTPUT_DIR=".researches/<timestamp>/firecrawl/raw"
-firecrawl search "site:nextjs.org Next.js 15" --scrape --limit 10 --json \
-  -o "$FIRECRAWL_OUTPUT_DIR/search.json"
-```
-
-Optional dual-representation scrape (same condition):
-
-```bash
-firecrawl scrape "https://docs.nextjs.org/14" --format markdown \
-  -o ".researches/<timestamp>/documentation/markdown/nextjs-14.md"
-firecrawl scrape "https://docs.nextjs.org/14" --format html \
-  -o ".researches/<timestamp>/documentation/html/nextjs-14.html"
-```
-
-Consolidate with session auto-discovery (picks up web-search, web-fetch, web-research, and firecrawl dirs if present):
-
-```bash
-# Runner alternatives: bunx tsx / pnpm dlx tsx / deno run -A npm:tsx / node --import tsx / yarn dlx tsx
-npx tsx .agents/skills/research-online/scripts/consolidate-research.ts \
-  --session-dir .researches/<timestamp> \
-  --query "What changed in Next.js 15?" \
-  --format thematic
-
-# Content cleaning is enabled by default during consolidation.
-# Use --no-clean to disable it when raw content is needed:
-npx tsx .agents/skills/research-online/scripts/consolidate-research.ts \
-  --session-dir .researches/<timestamp> \
-  --query "What changed in Next.js 15?" \
-  --format thematic \
-  --no-clean
-
-# Or consolidate the latest session automatically:
-npx tsx .agents/skills/research-online/scripts/consolidate-research.ts \
-  --auto-session \
-  --query "What changed in Next.js 15?" \
-  --format thematic
-```
-
-Consolidate from specific directories (legacy, single input dir):
-
-```bash
-# Runner alternatives: bunx tsx / pnpm dlx tsx / deno run -A npm:tsx / node --import tsx / yarn dlx tsx
-npx tsx .agents/skills/research-online/scripts/consolidate-research.ts \
-  --input-dir .researches/<timestamp>/firecrawl/reports \
-  --query "What changed in Next.js 15?" \
-  --format thematic
-```
-
-Save host web tool results into a session:
-
-```bash
-# Save web_search results
-# Runner alternatives: bunx tsx / pnpm dlx tsx / deno run -A npm:tsx / node --import tsx / yarn dlx tsx
-npx tsx .agents/skills/research-online/scripts/save-web-research.ts \
-  --query "Drizzle ORM connection pooling" \
-  --source search \
-  --content '{"results": [...]}'
-
-# Save web_fetch content (content cleaning enabled by default for fetch sources)
-npx tsx .agents/skills/research-online/scripts/save-web-research.ts \
-  --query "Drizzle ORM connection pooling" \
-  --source fetch \
-  --content "$(cat page.md)" \
-  --url "https://orm.drizzle.team/docs/connect-overview"
-
-# Save web_fetch content with raw content preserved (--no-clean)
-npx tsx .agents/skills/research-online/scripts/save-web-research.ts \
-  --query "Drizzle ORM connection pooling" \
-  --source fetch \
-  --content "$(cat page.md)" \
-  --url "https://orm.drizzle.team/docs/connect-overview" \
-  --no-clean
-```
-
-For the full command surface, see `references/tool-selection.md`.
-
-## Command Decision Guide
-
-| Scenario | Best tool | Reasoning |
-|----------|-----------|----------|
-| Quick fact lookup or discovery | Host `web_search` | Default path; any available search |
-| Known URL to read | Host `web_fetch` | Default path; any available fetch |
-| Do not know exact URLs, need targeted search | Host `web_search` then `web_fetch` | Scan snippets, then selective deep-read |
-| Need site structure | Specialized backend `map` (e.g. Firecrawl) if already available | No host-tool equivalent |
-| Deep-dive a docs section | Host `web_fetch` on listed URLs; optional specialized `crawl` | Crawl only if backend is present |
-| Extract structured fields | Specialized `agent --schema` if already available | Otherwise fetch and parse manually |
-| Complex autonomous exploration | Specialized `agent --wait` if already available | Otherwise chain host searches |
-| JS-heavy or interactive page | Specialized `browser` if already available | Otherwise note the gap |
-| Multi-source archival for repo docs | `archive-github-repo-docs.ts` | Hybrid markdown + HTML capture |
-| Reproducible research session | Session scripts + `.researches/` | Independent of which search/fetch ran |
-| No specialized backend installed | Host `web_search` / `web_fetch` | Complete default path, not a fallback |
-
-**Rule of thumb:** Use the simplest available tool that suffices. Host search/fetch for discovery and reads. Specialized backends only for mapping, crawl, schema, or browser work they uniquely cover — and only if already available.
-
-## Quick Decision Guide
-
-| Scenario | Recommended path | Trade-off |
-|----------|------------------|----------|
-| Need current facts from web | Host `web_search` | Default; no extra install |
-| Deep docs extraction | Host `web_fetch` for single pages; optional specialized `map`/`scrape` for multi-page sites | Host tools for speed; backend only if already available |
-| Structured data from known pages | Specialized `agent --schema` if already available; else fetch and parse | Schema extraction is optional |
-| JS-heavy or interactive page | Specialized `browser` if already available; else note the gap | Slowest; only when host fetch fails |
-| GitHub repo docs | `archive-github-repo-docs.ts` | Avoids blob-page markdown noise |
-| Quick question, no session needed | Host `web_search` | Fastest path to an answer |
-| Systematic multi-source research | Host search/fetch + `.researches/` session | Reproducibility does not require Firecrawl |
-| Compose discovery + deep extraction | Phase 1: host `web_search` → Phase 2 only if needed and a backend is present | Default is host-only |
+For the full Firecrawl command surface, read [tool selection](references/tool-selection.md) when that backend is already available.
 
 ## Research Methodology
 
@@ -301,34 +111,11 @@ The quality of search results depends directly on query construction. Follow the
 **For the full quick-reference card with reformulation techniques, domain-specific patterns, and anti-pattern examples, load `references/query-formulation.md`.**
 
 1. **Start specific, broaden if needed.** Frame the query around the exact technical concept, API, or error message. If results are sparse, generalize one term at a time.
-
-   ```text
-   ❌ "how to use drizzle"          → too broad, returns marketing pages
-   ❌ "drizzle orm"                → returns overview, not specifics
-   ✅ "drizzle ORM connection pooling postgres"  → targets the exact topic
-   ✅ "drizzle pgPool2 connection config"          → uses the specific API name
-   ```
-
 2. **Include context keywords that disambiguate.** "Auth" could mean many things; "Better Auth Next.js session cookie" disambiguates.
-
-   ```text
-   ❌ "authentication setup"
-   ✅ "Better Auth Next.js App Router session configuration"
-   ```
-
 3. **Use version and year for time-sensitive topics.** Frameworks and APIs change; version-qualified queries surface current answers.
-
-   ```text
-   ❌ "Next.js App Router changes"
-   ✅ "Next.js 15 App Router changes 2025"
-   ```
-
 4. **Quote exact error messages.** When debugging, use the exact error string (or its most unique fragment) as the query.
-
 5. **Include the technology name.** Generic terms like "connection pooling" return irrelevant results; "pg-pool connection pooling Node.js" narrows the domain.
-
 6. **Avoid question words.** Queries starting with "how to", "what is", or "why does" dilute the search signal. Lead with the technical noun phrase.
-
 7. **Iterate: reformulate, don't just fetch more.** If the first query returns low-quality results, reformulate with different terminology before fetching additional pages.
 
 ### Source Evaluation
@@ -337,13 +124,7 @@ Not all results are equal. Apply these heuristics when scanning `web_search` res
 
 **For the full quick-reference card with domain authority cheat sheet, red flags, and reformulation guidance, load `references/source-evaluation.md`.**
 
-| Signal | Strong source | Weak source |
-|--------|--------------|-------------|
-| **Domain** | Official docs, GitHub repos, `.dev` sites | Forums, SEO-heavy blogs, content mills |
-| **Recency** | Dated within last 12 months, or version-qualified | Undated, no version reference |
-| **Depth** | Code examples, API signatures, migration guides | High-level overviews, marketing copy |
-| **Authority** | First-party (author = maintainer or official team) | Third-party tutorials with no official reference |
-| **Canonical** | References to RFCs, specs, or official changelogs | Paraphrased summaries without source links |
+Score domain, recency, depth, author authority, and links to canonical sources.
 
 **Prioritization rule:** If a result matches 3+ strong signals, deep-read it first. If no result matches 2+ strong signals, reformulate the query.
 
@@ -372,27 +153,7 @@ If after applying these rules the conflict remains unresolved, present both posi
 
 ### Iterative Refinement Pattern
 
-When the initial query does not return useful results:
-
-```text
-Step 1: Classify the failure
-  - No results → query too specific or uses uncommon terminology
-  - Irrelevant results → query too broad or ambiguous
-  - Outdated results → add version/year qualifiers
-  - Low-authority results → add technology name or scope qualifier
-
-Step 2: Reformulate using one tactic at a time
-  - Generalize: remove the most specific term
-  - Rephrase: swap in synonyms or alternate terminology
-  - Scope: add technology/framework name as context
-  - Version: add year or version number
-  - Error-quote: use exact error message
-
-Step 3: Stop after 2-3 reformulations
-  - If still unsuccessful, note the gap in the synthesis
-  - Consider whether the information exists online at all
-  - Suggest alternative research angles if appropriate
-```
+When initial results are poor, diagnose whether they are absent, irrelevant, outdated, or low-authority. Change one query term or qualifier at a time. Read [query formulation](references/query-formulation.md#iterative-refinement-pattern) when you need a reformulation tactic.
 
 ### Research Chaining
 
@@ -401,13 +162,6 @@ When an initial search succeeds but reveals a more specific question, chain foll
 1. **Extract the specific question.** The initial results answered the broad question but revealed a narrower, deeper question ("How does X work?" → "How does X handle Y specifically?"). Write the follow-up as a new one-sentence research question.
 2. **Carry forward what you already know.** Include version numbers, framework names, and key terms from the initial results in the follow-up query. This makes follow-up queries more specific and more likely to return relevant results.
 3. **Apply a tighter sufficiency rule.** You're now in the second or third search. One authoritative source that directly answers the follow-up question is sufficient — you don't need to rediscover the broad context.
-
-```text
-Chain example:
-  Search 1: "Next.js App Router" → reveals Server Components are the key concept
-  Search 2: "Next.js 15 Server Components data fetching" → reveals caching behavior
-  Search 3: "Next.js fetch cache revalidation" → targeted answer found, stop
-```
 
 **When to chain vs. when to stop:** Chain when the initial answer is incomplete or reveals a dependency you didn't anticipate. Stop when you have a direct, version-qualified answer to your original question.
 
@@ -439,7 +193,6 @@ When 2-3 query reformulations still return poor results, follow this protocol in
    - Never fabricate an answer from weak evidence.
    - If partial information exists, present it with appropriate confidence qualifiers.
    - If no information exists, say so. An honest "I don't know" is better than a confident wrong answer.
-
 
 ### Research Sufficiency
 
@@ -492,10 +245,11 @@ Knowing when to stop researching is as important as knowing how to research. Ove
 3. Initialize the research session:
 
    ```bash
-   npm run research:session:init -- --query "<research question>"
+   npx tsx .agents/skills/research-online/scripts/init-research-session.ts \
+     --query "<research question>"
    ```
 
-4. Classify the task and load the minimum useful references (see table below).
+4. Classify the task and load the minimum useful references from the [reference index](#local-corpus-layout).
 5. Collect data with the chosen tool targeting the active session folder.
    - **Formulate queries carefully** (see Research Methodology > Query Formulation). Start specific, broaden only if needed, and reformulate rather than fetch more on poor results.
    - **Evaluate sources** before deep-reading (see Research Methodology > Source Evaluation). Prioritize results matching 3+ strong signals (official docs, recent, code examples, authoritative, canonical).
@@ -516,19 +270,7 @@ Knowing when to stop researching is as important as knowing how to research. Ove
 
 ### Reference Loading by Task Type
 
-Load only the subset the task needs. Do not run a specialized-backend status check before ordinary research.
-
-| Task type | Load these files | Skip |
-|-----------|-----------------|------|
-| Choose a specialized-backend command (only if that backend is already available) | `tool-selection.md` | `consolidation-patterns.md` |
-| Parallelize research across sources | `harness-patterns.md` | `github-repository-doc-archival.md` |
-| Archive GitHub repository docs | `github-repository-doc-archival.md` | `harness-patterns.md` |
-| Consolidate subagent results | `consolidation-patterns.md` | `tool-selection.md` |
-| Evaluate source credibility | `source-evaluation.md` | `consolidation-patterns.md` |
-| Formulate effective queries | `query-formulation.md` + `source-evaluation.md` | `github-repository-doc-archival.md` |
-| Improve poor search results | `query-formulation.md` (reformulation techniques) | `source-evaluation.md` |
-| Quick research (host tools) | `query-formulation.md` + `source-evaluation.md` | `tool-selection.md`, `harness-patterns.md`, `github-repository-doc-archival.md` |
-| Save and consolidate artifacts | `consolidation-patterns.md` (session discovery) | `source-evaluation.md` |
+Use the [reference index](#local-corpus-layout) to load only the files that match the task. Read [reference loading in harness patterns](references/harness-patterns.md#reference-loading-by-task-type) when choosing a combination for a multi-step workflow.
 
 ## Completion Output Contract
 
@@ -658,43 +400,29 @@ Keep `.researches/.gitkeep` committed and publish completed generated session fo
 ## Reliability and Cost Guardrails
 
 1. **Start with the simplest available tool that answers the question.** Host `web_search` for discovery; host `web_fetch` for known URLs.
-2. If a specialized crawl/scrape backend is in use, prefer `--max-age` for cache hits during iterative debugging.
-3. Scope crawls aggressively (`--limit`, `--include-paths`, `--exclude-paths`) when a crawl backend is used.
-4. Use schema-extraction agents only when structured output is required and that backend is already available.
-5. Treat autonomous browser/agent modes as a last resort and include timeout fallback logic.
-6. Save host search/fetch results to `.researches/<timestamp>/` for reproducibility. Firecrawl dirs are optional.
-7. If a specialized capability is needed but unavailable, note the gap and finish with host tools.
-8. **Formulate queries before launching searches.** Specific, disambiguated queries return better results than vague ones. Reformulate rather than fetching more pages on poor results.
-9. **Evaluate sources before deep-reading.** Prioritize official docs, GitHub repos, and recent version-qualified sources. Ignore forums and SEO blogs unless no better source exists.
-10. **Stop searching after 2-3 failed reformulations.** Follow the Research Dead End Protocol: classify the failure, switch strategy (site-qualified search, error-quote, version-qualified), document the gap, and escalate rather than extrapolate. Never continue a failing approach.
-11. **Reformulate queries before switching tools.** If host search returns poor results, another search backend with the same query will also return poor results. The query is the problem, not the tool.
-
-## Script Inventory
-
-| Script | Purpose | Key flags |
-|--------|---------|-----------|
-| `scripts/init-research-session.ts` | Bootstrap a timestamped research session directory | `--query`, `--metadata` |
-| `scripts/save-research.ts` | Import specialized-backend artifacts (Firecrawl dumps if used) into a session | `--query`, `--results`, `--results-dir`, `--session-dir`, `--list` |
-| `scripts/save-web-research.ts` | Import host search/fetch results into a session; content cleaning enabled by default for fetch/hybrid (`--no-clean` disables) | `--query`, `--source`, `--results`, `--content`, `--url`, `--clean`, `--no-clean`, `--session-dir`, `--metadata` |
-| `scripts/clean-web-content.ts` | Strip navigation chrome, cookie banners, footers, edit links, feedback prompts, copy buttons, pagination, inline TOCs, back-to-top links, sponsor sections, social prompts, newsletter CTAs from web content | `--content`, `--file`, `--output`, `--source`, `--no-cookie`, `--no-nav`, `--no-footer`, `--no-social`, `--no-newsletter`, `--no-edit-links`, `--no-feedback`, `--no-related`, `--no-copy-buttons`, `--no-pagination`, `--no-toc`, `--no-back-to-top`, `--no-sponsors`, `--no-whitespace` |
-| `scripts/clean-web-content.test.ts` | Regression tests for content cleaning: 10 removal tests + 8 false-positive guards | Run: `npx tsx .agents/skills/research-online/scripts/clean-web-content.test.ts`[^rt] |
-| `scripts/consolidate-research.ts` | Deduplicate and merge reports into `consolidated.md` + `consolidated.json`. Content cleaning enabled by default; use `--no-clean` for raw output. Auto-discovers all artifact dirs with `--session-dir` or `--auto-session` | `--session-dir`, `--auto-session`, `--input-dir`, `--input-file`, `--query`, `--format`, `--no-clean`, `--no-dedupe`, `--no-publish`, `--output` |
-| `scripts/finalize-research-session.ts` | Publish a completed session with a scoped commit/push | `--session-dir`, `--latest`, `--dry-run` |
-| `scripts/archive-github-repo-docs.ts` | Archive GitHub repo docs with canonical markdown + HTML + optional screenshots | `--session-dir`, `--github-repo`, `--branch`, `--repo-dir`, `--screenshot-mode`, `--file`, `--files-from` |
-| `scripts/research-session.ts` | Library: session directory layout builders and helpers | Imported by other scripts |
+2. Read [tool selection](references/tool-selection.md#additional-cost-and-reliability-guardrails) when setting up optional backend cache reuse, crawl scope, schema extraction, or timeout fallbacks.
+3. Save host search/fetch results to `.researches/<timestamp>/` for reproducibility. Firecrawl dirs are optional.
+4. If a specialized capability is needed but unavailable, note the gap and finish with host tools.
+5. **Formulate queries before launching searches.** Specific, disambiguated queries return better results than vague ones. Reformulate rather than fetching more pages on poor results.
+6. **Evaluate sources before deep-reading.** Prioritize official docs, GitHub repos, and recent version-qualified sources. Ignore forums and SEO blogs unless no better source exists.
+7. **Stop searching after 2-3 failed reformulations.** Follow the Research Dead End Protocol: classify the failure, switch strategy (site-qualified search, error-quote, version-qualified), document the gap, and escalate rather than extrapolate. Never continue a failing approach.
+8. **Reformulate queries before switching tools.** If host search returns poor results, another search backend with the same query will also return poor results. The query is the problem, not the tool.
 
 ## Local Corpus Layout
 
-The `references/` directory contains 6 hand-authored synthesis files. No subfolders. No vendored upstream documentation pages.
+The `references/` directory contains seven hand-authored synthesis and command references. No subfolders. No vendored upstream documentation pages.
 
-| File | Purpose |
+Read each reference when you need the guidance below.
+
+| File | Read when you need |
 |------|---------|
-| `consolidation-patterns.md` | Six consolidation strategies for merging subagent findings, plus deduplication and validation checklists |
-| `github-repository-doc-archival.md` | Hybrid archival pattern for GitHub repo docs: canonical markdown, rendered HTML, and optional screenshots |
-| `harness-patterns.md` | Harness-worker patterns: host search/fetch parallelization (default), optional specialized-backend patterns, plus session directory reference |
-| `query-formulation.md` | Query formulation quick-reference: reformulation techniques, domain-specific patterns, query anatomy, anti-patterns, and phase-specific guidance |
-| `source-evaluation.md` | Source evaluation quick-reference: 5-signal heuristic, domain authority cheat sheet, version-qualified query patterns, recency signals, red flags, and reformulation guidance |
-| `tool-selection.md` | Host-first tool decision tree; optional Firecrawl CLI command patterns and cost guardrails when that backend is present |
+| [`consolidation-patterns.md`](references/consolidation-patterns.md) | Six consolidation strategies for merging subagent findings, plus deduplication and validation checklists |
+| [`github-repository-doc-archival.md`](references/github-repository-doc-archival.md) | Hybrid archival pattern for GitHub repo docs: canonical markdown, rendered HTML, and optional screenshots |
+| [`harness-patterns.md`](references/harness-patterns.md) | Harness-worker patterns: host search/fetch parallelization (default), optional specialized-backend patterns, plus session directory reference |
+| [`query-formulation.md`](references/query-formulation.md) | Query formulation quick-reference: reformulation techniques, domain-specific patterns, query anatomy, anti-patterns, and phase-specific guidance |
+| [`source-evaluation.md`](references/source-evaluation.md) | Source evaluation quick-reference: 5-signal heuristic, domain authority cheat sheet, version-qualified query patterns, recency signals, red flags, and reformulation guidance |
+| [`tool-selection.md`](references/tool-selection.md) | Host-first tool decision tree; optional Firecrawl CLI command patterns and cost guardrails when that backend is present |
+| [`session-commands.md`](references/session-commands.md) | CLI examples for saving, consolidating, or publishing a session, plus the full script and flag inventory |
 
 ## Guidance Alignment
 

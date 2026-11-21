@@ -31,7 +31,7 @@
  * ```
  *
  * @testing CLI manual: npx tsx .agents/skills/research-online/scripts/save-web-research.ts --query "test" --source search --content '{}'
- * @see skills/research-online/SKILL.md - Skill workflow documentation for research sessions.
+ * @see ../references/session-commands.md - Examples for saving host search and fetch artifacts.
  * @see skills/research-online/scripts/save-research.ts - Firecrawl artifact persistence.
  * @see skills/research-online/scripts/research-session.ts - Session layout library.
  * @documentation reviewed=2026-05-18 standard=FILE_OVERVIEW_STANDARDS_TYPESCRIPT@3

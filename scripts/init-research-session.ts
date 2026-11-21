@@ -11,7 +11,7 @@
  * ```
  *
  * @testing CLI manual: npx tsx .agents/skills/research-online/scripts/init-research-session.ts --query "OpenRouter model pricing"
- * @see skills/research-online/SKILL.md - Skill workflow documentation for research sessions.
+ * @see ../references/session-commands.md - Session initialization commands.
  * @documentation reviewed=2026-04-30 standard=FILE_OVERVIEW_STANDARDS_TYPESCRIPT@3
  */
 

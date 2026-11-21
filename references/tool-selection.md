@@ -199,3 +199,106 @@ If browser fallback is required for GitHub pages, prefer explicit `firecrawl bro
 10. Multi-source research: host search for discovery, host fetch for the best sources; Phase 2 only if needed.
 11. Formulate specific, disambiguated queries before searching — see SKILL.md > Research Methodology > Query Formulation for heuristics.
 12. Evaluate source credibility before deep-reading — prioritize results matching 3+ strong signals (official docs, recent, code examples, first-party, canonical). See SKILL.md > Research Methodology > Source Evaluation.
+
+### Hybrid Two-Phase Research Pattern
+
+For multi-source research where both breadth and depth matter, compose the tools in two phases:
+
+**Phase 1 — Discovery (host search/fetch, default):**
+1. Use host `web_search` with the research query to discover relevant URLs.
+2. Review result titles and snippets to identify the 2–5 most promising sources.
+3. Use host `web_fetch` on the **most promising 1–2 URLs only** for immediate deep-reads. Do not fetch all results — selectivity reduces context noise and improves synthesis quality.
+4. If the answers are sufficient, deliver the synthesis — no specialized backend needed.
+
+**Phase 2 — Deep extraction (optional specialized backend):**
+5. Only if host fetch cannot produce clean extraction, structured JSON, site maps, or crawls **and** a backend such as Firecrawl CLI is already available:
+   ```bash
+   firecrawl scrape "<url>" --only-main-content --format markdown
+   ```
+6. For multi-page sites that need mapping (host fetch has no equivalent):
+   ```bash
+   firecrawl map "<site-root>" --search "<topic>"
+   ```
+7. Save all Phase 2 outputs to the `.researches/<timestamp>/` session folder.
+
+**When to skip Phase 2:**
+- Phase 1 provided sufficient answers.
+- No specialized backend is installed or authenticated.
+- The research doesn't need mapping, crawl, schema extraction, or dual-representation archival.
+
+**When Phase 2 is useful (only if a backend is already available):**
+- Research needs structured JSON extraction (`firecrawl agent --schema` or equivalent).
+- Research needs site-wide mapping or crawling.
+- Research needs dual-representation archival that host fetch cannot produce.
+
+This pattern uses always-available host tools for discovery, and spends specialized-backend budget only on the extraction tasks those backends uniquely cover.
+
+## Firecrawl Command Examples
+
+**Hybrid discovery pattern (recommended for most research):**
+
+1. Discover with host `web_search`, then deep-read with host `web_fetch`:
+
+```
+web_search: "What changed in Next.js 15?"
+→ scan titles + snippets (don't read all results in full)
+→ select 1-2 most relevant URLs
+web_fetch: top URL for deep content
+→ optional, only if host fetch is insufficient AND a specialized backend is already available:
+   firecrawl scrape "<url>" --only-main-content --format markdown
+```
+
+Optional Firecrawl search (only if that CLI is already available and host search is not enough):
+
+```bash
+export FIRECRAWL_OUTPUT_DIR=".researches/<timestamp>/firecrawl/raw"
+firecrawl search "site:nextjs.org Next.js 15" --scrape --limit 10 --json \
+  -o "$FIRECRAWL_OUTPUT_DIR/search.json"
+```
+
+Optional dual-representation scrape (same condition):
+
+```bash
+firecrawl scrape "https://docs.nextjs.org/14" --format markdown \
+  -o ".researches/<timestamp>/documentation/markdown/nextjs-14.md"
+firecrawl scrape "https://docs.nextjs.org/14" --format html \
+  -o ".researches/<timestamp>/documentation/html/nextjs-14.html"
+```
+
+## Command Decision Guide
+
+| Scenario | Best tool | Reasoning |
+|----------|-----------|----------|
+| Quick fact lookup or discovery | Host `web_search` | Default path; any available search |
+| Known URL to read | Host `web_fetch` | Default path; any available fetch |
+| Do not know exact URLs, need targeted search | Host `web_search` then `web_fetch` | Scan snippets, then selective deep-read |
+| Need site structure | Specialized backend `map` (e.g. Firecrawl) if already available | No host-tool equivalent |
+| Deep-dive a docs section | Host `web_fetch` on listed URLs; optional specialized `crawl` | Crawl only if backend is present |
+| Extract structured fields | Specialized `agent --schema` if already available | Otherwise fetch and parse manually |
+| Complex autonomous exploration | Specialized `agent --wait` if already available | Otherwise chain host searches |
+| JS-heavy or interactive page | Specialized `browser` if already available | Otherwise note the gap |
+| Multi-source archival for repo docs | `archive-github-repo-docs.ts` | Hybrid markdown + HTML capture |
+| Reproducible research session | Session scripts + `.researches/` | Independent of which search/fetch ran |
+| No specialized backend installed | Host `web_search` / `web_fetch` | Complete default path, not a fallback |
+
+**Rule of thumb:** Use the simplest available tool that suffices. Host search/fetch for discovery and reads. Specialized backends only for mapping, crawl, schema, or browser work they uniquely cover — and only if already available.
+
+## Quick Decision Guide
+
+| Scenario | Recommended path | Trade-off |
+|----------|------------------|----------|
+| Need current facts from web | Host `web_search` | Default; no extra install |
+| Deep docs extraction | Host `web_fetch` for single pages; optional specialized `map`/`scrape` for multi-page sites | Host tools for speed; backend only if already available |
+| Structured data from known pages | Specialized `agent --schema` if already available; else fetch and parse | Schema extraction is optional |
+| JS-heavy or interactive page | Specialized `browser` if already available; else note the gap | Slowest; only when host fetch fails |
+| GitHub repo docs | `archive-github-repo-docs.ts` | Avoids blob-page markdown noise |
+| Quick question, no session needed | Host `web_search` | Fastest path to an answer |
+| Systematic multi-source research | Host search/fetch + `.researches/` session | Reproducibility does not require Firecrawl |
+| Compose discovery + deep extraction | Phase 1: host `web_search` → Phase 2 only if needed and a backend is present | Default is host-only |
+
+### Additional Cost and Reliability Guardrails
+
+2. If a specialized crawl/scrape backend is in use, prefer `--max-age` for cache hits during iterative debugging.
+3. Scope crawls aggressively (`--limit`, `--include-paths`, `--exclude-paths`) when a crawl backend is used.
+4. Use schema-extraction agents only when structured output is required and that backend is already available.
+5. Treat autonomous browser/agent modes as a last resort and include timeout fallback logic.

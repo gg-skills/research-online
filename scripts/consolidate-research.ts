@@ -28,7 +28,7 @@
  *   --format thematic
  *
  * @testing Manual — npx tsx .agents/skills/research-online/scripts/consolidate-research.ts
- * @see skills/research-online/SKILL.md - Research workflow that owns this consolidation surface.
+ * @see ../references/session-commands.md - Consolidation examples and flag reference.
  * @see skills/research-online/scripts/save-web-research.ts - Web tool result persistence sibling script.
  * @documentation reviewed=2026-05-18 standard=FILE_OVERVIEW_STANDARDS_TYPESCRIPT@3
  */

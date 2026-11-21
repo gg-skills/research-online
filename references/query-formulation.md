@@ -210,3 +210,53 @@ Outcome:    Official TypeScript handbook directly with canonical examples
 - For host-first tool selection and optional Firecrawl command syntax, see `references/tool-selection.md`.
 - For conflict resolution when sources disagree, see SKILL.md → Research Methodology → Conflict Resolution.
 - For chaining follow-up searches when initial results reveal a more specific question, see SKILL.md → Research Methodology → Research Chaining.
+
+### Iterative Refinement Pattern
+
+When the initial query does not return useful results:
+
+```text
+Step 1: Classify the failure
+  - No results → query too specific or uses uncommon terminology
+  - Irrelevant results → query too broad or ambiguous
+  - Outdated results → add version/year qualifiers
+  - Low-authority results → add technology name or scope qualifier
+
+Step 2: Reformulate using one tactic at a time
+  - Generalize: remove the most specific term
+  - Rephrase: swap in synonyms or alternate terminology
+  - Scope: add technology/framework name as context
+  - Version: add year or version number
+  - Error-quote: use exact error message
+
+Step 3: Stop after 2-3 reformulations
+  - If still unsuccessful, note the gap in the synthesis
+  - Consider whether the information exists online at all
+  - Suggest alternative research angles if appropriate
+```
+
+## Examples of Query Formulation and Chaining
+
+```text
+❌ "how to use drizzle"          → too broad, returns marketing pages
+❌ "drizzle orm"                → returns overview, not specifics
+✅ "drizzle ORM connection pooling postgres"  → targets the exact topic
+✅ "drizzle pgPool2 connection config"          → uses the specific API name
+```
+
+```text
+❌ "authentication setup"
+✅ "Better Auth Next.js App Router session configuration"
+```
+
+```text
+❌ "Next.js App Router changes"
+✅ "Next.js 15 App Router changes 2025"
+```
+
+```text
+Chain example:
+  Search 1: "Next.js App Router" → reveals Server Components are the key concept
+  Search 2: "Next.js 15 Server Components data fetching" → reveals caching behavior
+  Search 3: "Next.js fetch cache revalidation" → targeted answer found, stop
+```

@@ -8,4 +8,5 @@ interface:
     Use when current web research, site mapping, or structured page extraction is needed. Use
     whatever web search and page-fetch tools the harness exposes; save artifacts under
     .researches/. Firecrawl CLI is optional if already available. Reference
-    research-online/SKILL.md when cross-referencing this skill.
+    research-online/SKILL.md for the workflow and research-online/references/session-commands.md
+    when you need commands to save, consolidate, or publish a session.

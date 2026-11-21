@@ -75,7 +75,7 @@ Default path (any harness that exposes search or fetch):
 |---------|---------|
 | Host `web_search` (or equivalent) | Discovery — locate candidate URLs from a query. Names vary by harness. |
 | Host `web_fetch` (or equivalent) | Single-page read of a known URL. Names vary (`web_fetch`, `WebFetch`, `open_page`, MCP fetch). |
-| `npm run research:session:init` | Bootstraps the timestamped session directory and writes `metadata.json`. |
+| `npx tsx scripts/init-research-session.ts` | Bootstraps the timestamped session directory and writes `metadata.json`. |
 | `npx tsx scripts/save-web-research.ts` | Persists host search/fetch results into the session. |
 | `npx tsx scripts/consolidate-research.ts` | Deduplicates and merges reports into `consolidated.md` + `consolidated.json`. |
 | `npx tsx scripts/finalize-research-session.ts` | Publishes the completed session with a scoped commit/push. |
@@ -113,7 +113,7 @@ Optional specialized backend (only if already installed and authenticated):
 
 ```mermaid
 flowchart TD
-    A([Research question received]) --> D[npm run research:session:init\ncreate .researches/timestamp/]
+    A([Research question received]) --> D[init-research-session.ts\ncreate .researches/timestamp/]
     D --> E{Classify task}
     E -->|Unknown URLs| F[Host web_search\ndiscover candidate URLs]
     E -->|Known URLs| H[Host web_fetch\nread page]
@@ -133,21 +133,27 @@ flowchart TD
 
 ```
 research-online/
-├── SKILL.md                         # Skill descriptor and full policy
+├── SKILL.md                         # Core workflow, decision points, and output contract
 ├── README.md                        # This file
 ├── agents/
 │   └── openai.yaml                  # Agent definition
 ├── assets/                          # Skill icons
-│   ├── icon-large.png / .svg
+│   ├── icon-{large,master}.png
+│   ├── icon-large.svg
+│   ├── icon-{metaphor,prompt,summary}.txt
 │   └── icon-small.svg
 ├── references/
 │   ├── consolidation-patterns.md    # Six strategies for merging subagent findings
 │   ├── github-repository-doc-archival.md  # Hybrid archival pattern for GitHub repos
 │   ├── harness-patterns.md          # Parallelisation patterns (host search/fetch default)
+│   ├── query-formulation.md        # Query and reformulation examples
+│   ├── session-commands.md         # Session CLI examples and script inventory
+│   ├── source-evaluation.md        # Source credibility and scoring
 │   └── tool-selection.md            # Host-first decision tree + optional Firecrawl commands
 └── scripts/
     ├── init-research-session.ts     # Bootstrap timestamped session directory
     ├── save-research.ts             # Import pre-existing temp files into a session
+    ├── save-web-research.ts         # Save host search and fetch results
     ├── consolidate-research.ts      # Deduplicate and merge into consolidated outputs
     ├── finalize-research-session.ts # Publish completed session via commit/push
     ├── archive-github-repo-docs.ts  # Archive GitHub repo docs faithfully
@@ -158,7 +164,8 @@ research-online/
 
 ```bash
 # 1. Initialise a session (no Firecrawl pre-flight)
-npm run research:session:init -- --query "What changed in Next.js 15?"
+npx tsx .agents/skills/research-online/scripts/init-research-session.ts \
+  --query "What changed in Next.js 15?"
 
 # 2. Discover with the host's search tool, then fetch 1–2 URLs.
 #    Persist results (names of host tools vary by harness):
@@ -167,11 +174,12 @@ npx tsx .agents/skills/research-online/scripts/save-web-research.ts \
   --source search \
   --content '{"results": [...]}'
 
-# 3. Consolidate whatever the session collected
+# 3. Consolidate the session for review before publishing
 npx tsx .agents/skills/research-online/scripts/consolidate-research.ts \
   --auto-session \
   --query "What changed in Next.js 15?" \
-  --format thematic
+  --format thematic \
+  --no-publish
 
 # 4. Publish
 npx tsx .agents/skills/research-online/scripts/finalize-research-session.ts \
@@ -183,8 +191,10 @@ npx tsx .agents/skills/research-online/scripts/finalize-research-session.ts \
 - Host search/fetch tools provided by the current harness (required default path).
 - [firecrawl](https://github.com/gg-skills/firecrawl) — optional low-level CLI primer; load only when that backend is already available and you need command syntax.
 - [Firecrawl documentation](https://docs.firecrawl.dev) — upstream reference for the optional backend.
-- `references/tool-selection.md` — host-first decision tree and optional Firecrawl command patterns.
-- `references/harness-patterns.md` — parallelisation patterns for high fan-out research.
+- Read the [skill workflow](SKILL.md#workflow) to run a research session from planning through synthesis.
+- Read [session commands](references/session-commands.md) when you need CLI examples or the script and flag inventory.
+- Read [tool selection](references/tool-selection.md) when an available specialized backend is needed for mapping, crawling, schema extraction, or browser automation.
+- Read [harness patterns](references/harness-patterns.md) when you need selective fetch examples or parallelisation patterns for high fan-out research.
 
 ## Caveats
 
